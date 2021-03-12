@@ -65,5 +65,3 @@ def fetch_all_campus():
     # in september of 2016, so let's start our scrape there.
     maps = ['wp-sitemap-posts-post-7.xml','wp-sitemap-posts-post-8.xml']
     return fetch_articles_campus(maps)
-
-
