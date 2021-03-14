@@ -53,6 +53,6 @@ def user_scrape(users: list, outfile: str, limit: int, since: int) -> None:
 
 if __name__ == '__main__':
     test_users = get_user_list()
-    exit(0) # stop here for now
+    #exit(0) # stop here for now
 
     user_scrape(test_users, limit=100, outfile="test.csv", since="2021-03-06")
