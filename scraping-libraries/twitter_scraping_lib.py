@@ -12,9 +12,13 @@ followers as a list of strings, and feed it into the twint scraper
 import twint
 import typing
 import os
+from dotenv import load_dotenv
+
 
 global data_dir
 data_dir = "../data"
+
+
 
 
 def get_user_list() -> list:

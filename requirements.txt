@@ -1,0 +1,5 @@
+transformers
+dotenv
+twint
+tweepy
+tensorflow
