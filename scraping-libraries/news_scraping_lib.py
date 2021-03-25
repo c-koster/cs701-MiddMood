@@ -12,6 +12,12 @@ campus_url = 'https://middleburycampus.com/'
 # the two sitemaps which include articles from our desired date range
 campus_categories = ['sports','news','local','opinion','arts-academics']
 
+@dataclass
+class Article:
+    date: str
+    headline: str
+    link: str
+    text: str
 
 def get_headlines_noodle(page):
     headlines = []
@@ -38,7 +44,6 @@ def fetch_all_noodle():
         noodle_headlines += get_headlines_noodle(url_i)
 
     return noodle_headlines
-
 
 
 def fetch_articles_campus(maps):
