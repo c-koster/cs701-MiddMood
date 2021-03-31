@@ -3,3 +3,5 @@ dotenv
 twint
 tweepy
 tensorflow
+wordcloud
+sklearn
