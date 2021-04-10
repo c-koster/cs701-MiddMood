@@ -9,8 +9,7 @@ from wordcloud import WordCloud, STOPWORDS
 from sklearn.feature_extraction.text import CountVectorizer
 
 import operator
-
-from news_scraping_lib import
+import json
 
 stopwords = set(STOPWORDS)
 
@@ -66,6 +65,15 @@ def get_corpus(data_src):
                 u=row["tweet"]
                 corpus = corpus + " " + u
         return corpus.replace(r'[^\s\w]','')
+    if data_src == "NEWS":
+        with open("scraping-libraries/NEWS.txt") as fp:
+            for line in fp:
+                print(line)
+                doc = json.loads(line)
+                u=doc['title'] + doc['text']
+                corpus = corpus + " " + u
+        return corpus.replace(r'[^\s\w]','')
+
     else:
         return False
 

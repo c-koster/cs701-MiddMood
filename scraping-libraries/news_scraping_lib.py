@@ -14,7 +14,6 @@ noodle_url = "https://thelocalnoodle.com/page/"
 
 # globals - campus
 begin = 54164
-
 campus_url = 'https://middleburycampus.com/'
 
 # the two sitemaps which include articles from our desired date range
@@ -53,8 +52,16 @@ def get_text_noodle(article):
     link = article[1]
     r = requests.get(link)
     html_doc = r.content
+    soup = BeautifulSoup( html_doc , 'html.parser')
+    text = ""
+    content = soup.find_all("div",{"class": "entry-content"})[0]
+    for p in content.find_all("p"):
+        text = text + p.text
 
-    return
+    date_text = soup.find_all("a",{"class": "entry-date"})[1].text
+    date = datetime.strptime(date_text, '%B %d, %Y')
+
+    return {'title':title,'text':text,'date':date,'link':link}
 
 
 def get_text_campus(article):
@@ -112,7 +119,7 @@ def fetch_all_campus():
 
 if __name__ == "__main__":
     campus = fetch_all_campus()
-    #noodle = fetch_all_noodle()
+    noodle = fetch_all_noodle()
 
     campus_texts_full = []
     for article_pair in campus:
@@ -126,9 +133,12 @@ if __name__ == "__main__":
             a['date'] = str(a['date'])
             print(a)
 
-    """
     noodle_texts_full = []
     for article_pair in noodle:
         noodle_texts_full.append(get_text_noodle(article_pair))
-    """
+
+    for a in noodle_texts_full:
+        if a['date'] > seven_days_ago:
+            a['date'] = str(a['date'])
+            print(a)
     # eh just filter by date and dump it all to stdout ... ?
