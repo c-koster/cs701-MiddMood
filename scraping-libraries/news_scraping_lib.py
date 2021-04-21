@@ -2,18 +2,17 @@
 # I want a list of articles
 
 
-
-
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import tqdm
+import json
 
 # globals - noodle
 noodle_url = "https://thelocalnoodle.com/page/"
 
 # globals - campus
-begin = 54164
+begin = 53741
 campus_url = 'https://middleburycampus.com/'
 
 # the two sitemaps which include articles from our desired date range
@@ -32,8 +31,6 @@ def get_headlines_noodle(page):
         link_elem = e.find_all('a', href=True)
         link = link_elem[0]['href']
         headlines.append((e.text,link))
-
-
 
     return headlines
 
@@ -74,15 +71,15 @@ def get_text_campus(article):
     html_doc = r.content
     soup = BeautifulSoup( html_doc , 'html.parser')
 
-
     text = ""
     content = soup.find_all("span",{"class": "storycontent"})[0]
     for p in content.find_all("p"):
         text = text + p.text
-
-    date_text = soup.find("span",{"class": "time-wrapper"}).text
-    date = datetime.strptime(date_text, '%B %d, %Y') # this is still a datetime object
-
+    try:
+        date_text = soup.find("span",{"class": "time-wrapper"}).text
+        date = datetime.strptime(date_text, '%B %d, %Y') # this is still a datetime object
+    except:
+        return False
     title = soup.find("h1",{"class": "storyheadline"}).text
 
     return {'title':title,'text':text,'date':date,'link':link}
@@ -115,23 +112,27 @@ def fetch_all_campus():
     return fetch_articles_campus(maps)
 
 
-
-
 if __name__ == "__main__":
+
     campus = fetch_all_campus()
     noodle = fetch_all_noodle()
 
+
     campus_texts_full = []
     for article_pair in campus:
-        campus_texts_full.append(get_text_campus(article_pair))
+        a = get_text_campus(article_pair)
+        if a != False:
+            campus_texts_full.append(a)
         #print(article_pair[0])
 
-
+        
     seven_days_ago = datetime.now() - timedelta(days=7)
+    seven_days_ago = datetime(2021,2,21)
+
     for a in campus_texts_full:
         if a['date'] > seven_days_ago:
             a['date'] = str(a['date'])
-            print(a)
+            print(json.dumps(a))
 
     noodle_texts_full = []
     for article_pair in noodle:
@@ -140,5 +141,5 @@ if __name__ == "__main__":
     for a in noodle_texts_full:
         if a['date'] > seven_days_ago:
             a['date'] = str(a['date'])
-            print(a)
+            print(json.dumps(a))
     # eh just filter by date and dump it all to stdout ... ?

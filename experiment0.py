@@ -10,6 +10,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 import operator
 import json
+import math
 
 stopwords = set(STOPWORDS)
 
@@ -68,7 +69,7 @@ def get_corpus(data_src):
     if data_src == "NEWS":
         with open("scraping-libraries/NEWS.txt") as fp:
             for line in fp:
-                print(line)
+                #print(line)
                 doc = json.loads(line)
                 u=doc['title'] + doc['text']
                 corpus = corpus + " " + u
@@ -76,7 +77,6 @@ def get_corpus(data_src):
 
     else:
         return False
-
 
 
 def word_bag(corpus):
@@ -100,24 +100,24 @@ def word_bag(corpus):
     return words
 
 
-def get_word_index():
+def get_word_index(DIAL=2):
     word_hash = {}
     with open("data/dodds.txt",'r') as wordfile:
             # Combine the lines in the list into a string
             content = wordfile.readlines()
             content = content[4:]
-            for word_info in content[:10]:
+            for word_info in content:
                 w = word_info.split()
                 word = w[0]
-                word_score = w[2]
-                word_hash[word] = word_score # add it to the dict
+                word_score = float(w[2])
+                if abs(5 - word_score) > DIAL:
+                    word_hash[word] = word_score # add it to the dict
             #content = "".join(content)
 
     return word_hash
 
 
-
-def dodds_word_score(corpus,word_scores):
+def dodds_word_score(corpus,word_scores=get_word_index()):
     """
     Perform a dodds-grading scheme on a corpus/bag of words. Ignore (but record)
     middlebury-specific or twitter specific words which don't get spotted.
@@ -127,10 +127,15 @@ def dodds_word_score(corpus,word_scores):
     for w in corpus.items():
         word = w[0]
         freq = w[1]
-        if w[0] in word_scores.keys():
 
-            print(word,freq)
+        if word in word_scores.keys():
+            h_avg += word_scores[word] * freq
+            words_tot += freq
 
+    # SAFE MEAN -- if there were no examples we should predict the mean
+    if words_tot == 0:
+        return 5.0
+    return h_avg / words_tot
 
 
 
@@ -138,6 +143,10 @@ def dodds_word_score(corpus,word_scores):
 if __name__ == "__main__":
     # maybe useful to decide which experiment to run based on text input
     word_hash = get_word_index()
+
+    print(word_hash.keys())
+
+    exit(0)
     c = get_corpus("NEWS")
     tweets_bag = word_bag(c)
     dodds_word_score(corpus=tweets_bag,word_scores=word_hash)
