@@ -5,3 +5,5 @@ tweepy
 tensorflow
 spacy
 nltk
+wordcloud
+sklearn

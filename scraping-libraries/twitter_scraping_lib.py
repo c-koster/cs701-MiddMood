@@ -86,4 +86,4 @@ if __name__ == '__main__':
         for line in infile:
             users.append(line.strip())
 
-    user_scrape(users, limit=100, outfile="first_scrape.csv", since="2021-03-18")
+    user_scrape(users, limit=100, outfile="demo_scrape.csv", since="2021-02-21")
