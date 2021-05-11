@@ -227,7 +227,7 @@ def scrape_all_news(since: datetime, outfile: str) -> None:
 
     # this gets us all headlines
     campus = fetch_all_campus()
-    noodle = fetch_all_noodle()
+    noodle = [] #fetch_all_noodle()
 
     # this will look at each headline and pull text for us
     campus_texts_full = []
@@ -272,7 +272,7 @@ if __name__ == '__main__':
             exit(-1)
 
     # run the twitter scrape
-    users = get_user_list()
-    user_scrape(users, limit=100, outfile="tweets_out.csv", since=date_start)
+    #users = get_user_list()
+    #user_scrape(users, limit=100, outfile="tweets_out.csv", since=date_start)
     # and the campus scrape
-    scrape_all_news(since=date_start_dt,outfile="news_write_test.txt")
+    scrape_all_news(since=date_start_dt,outfile="news_out.txt")
