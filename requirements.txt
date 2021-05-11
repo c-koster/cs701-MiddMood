@@ -1,5 +1,8 @@
 dotenv
 twint
 tweepy
+tensorflow
+spacy
+nltk
 wordcloud
 sklearn

@@ -16,7 +16,7 @@ plt.show()
 #%% get rid of neutral  text (positive = 1, negative = -1)
 
 filter_pos = df["Positive"] != 1
-filter_relax = df["Relax"] != 1
+filter_neg = df["Negative"] != -1
 filter_relax = df["Relax"] != 1
 filter_stress = df["Stress"] != -1
 
@@ -50,5 +50,10 @@ filtered['Senti_Sum']=filtered.apply(lambda row: add(row.Positive, row.Negative)
 filtered['Tensi_Sum']=filtered.apply(lambda row: add(row.Relax, row.Stress), axis = 1)
 filtered.groupby('date')['Senti_Sum', 'Tensi_Sum'].mean().plot()
 
+
+# %%
+thelwall=pd.DataFrame(filtered.groupby('date')['Senti_Sum', 'Tensi_Sum'].mean())
+print(thelwall.head())
+thelwall.to_json(path_or_buf='../../filtered.json')
 
 # %%
