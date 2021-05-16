@@ -1,13 +1,17 @@
 """
-This is a library for automated data processing and scoring for tweets and news.
-It takes as input the text scraping library's output:
- - a tweets csv file
- - a news articles jsonl file
- - a 'tuning parameter'
-and outputs
- -
+This is our library for automated data processing and scoring for tweets and news.
 
+INPUT:
+we take as input the two outfiles from the text scraping libraryself.
 
+- a tweets csv file
+- a news articles jsonl file
+- a 'tuning parameter' for our evaluation function, which determines our sensitivity to
+neutrally-rated words.
+
+OUTPUT:
+A text file of dictionary objects, in which each line corresponds with one day's
+text and happiness score.
 """
 # killer combo -- collections.Counter and CountVectorizer
 from collections import Counter
@@ -20,7 +24,7 @@ STOPWORDS = STOPWORDS | set(['t','co','http','https'])
 # https is really trending huh
 
 
-# python but fancy
+# python but fancier
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 
@@ -55,7 +59,7 @@ assert(os.path.exists(filepath_dodds))
 # convenience functions --
 def date_range(d0: date,d1: date) -> List:
     """ give me a range of days """
-    return [d0+timedelta(days=i) for i in range((d1-d0).days + 1)]
+    return [d0+timedelta(days=i) for i in range((d1-d0).days)]
 
 def get_word_index(DIAL: int=2) -> Dict:
     """ Load the dodds/mturk word bank into a dictionary for quick lookups"""
@@ -176,8 +180,8 @@ def get_corpus(data_src: str) -> TextData:
 
 def get_text_by_day(d0: date, d1: date):
     """
-
-
+    Create a dictionary with keys for each day in the range [d0, d1). Then
+    sort/group all our text into these date buckets.
     """
     group_by_day = {}
 
@@ -215,21 +219,22 @@ if __name__ == "__main__":
 
     # declare defaults
     date_end = date.today()
-    date_start: date # date_start = date_end - timedelta(days=7)
+    date_start = date_end - timedelta(days=7)
+
 
     # get your dates from sys.argv
-    if len(sys.argv) < 2: # unless someone input a different date in the command line
-        print("usage: python3 {} <start_date: yyyy-mm-dd> <(end_date): yyyy-mm-dd>".format(sys.argv[0]))
-        exit(-1)
-    try:
-        date_start = date.fromisoformat(sys.argv[1])
+    if len(sys.argv) > 1: # unless someone input a different date in the command line
 
-        if len(sys.argv) == 3:
-            date_end = date.fromisoformat(sys.argv[2])
+        try:
+            date_start = date.fromisoformat(sys.argv[1])
 
-    except ValueError:
-        print("Bad datetime string!")
-        exit(-1)
+            if len(sys.argv) == 3:
+                date_end = date.fromisoformat(sys.argv[2])
+
+        except ValueError:
+            print("Bad datetime string!")
+            print("usage: python3 {} <start_date: yyyy-mm-dd> <(end_date): yyyy-mm-dd>".format(sys.argv[0]))
+            exit(-1)
 
     # construct get-text-by-day dictionary
     dates = get_text_by_day(date_start,date_end)

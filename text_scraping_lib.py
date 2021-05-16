@@ -1,7 +1,9 @@
 """
-This is our text scraping library for
+This is our text scraping library for the MiddMood project. We scrape text from three
+sources: Middlebury students' twitter, The Local Noodle (thelocalnoodle.com), and the
+Middlebury Campus newspaper (middleburycampus.com).
 
-TWITTER:
+TWITTER
 Two tasks needed for data collection:
 1. run a search algorithm (BFS probably) on some starting user to find a list of middlebury
 twitter users.
@@ -11,6 +13,15 @@ This is behind a login screen now. Backup plan is to use the twitter dev portal,
 followers as a list of strings, and feed it into the twint scraper
 
 2. input a list of users and a date range, retrieve all tweets posted by users across this period.
+
+
+NOODLE & MIDDCAMPUS
+Two tasks needed here to scrape articles.
+1. fetch all the links from the newspapers' sitemaps (campus) or by scrolling through
+the front page (noodle). We do this using BeautifulSoup and the requests library.
+
+2. For each article, visit the link, and extract the title, story content, and date of
+publication. Then turn the publication date into a datetime string so it can be filtered.
 """
 
 from tqdm import tqdm
@@ -106,15 +117,6 @@ def user_scrape(users: List, outfile: str, limit: int, since: str) -> None:
             continue
 
 
-"""
-Here are all the campus and noodle scraping functions:
-
-scrape_all accepts a 'since' datetime parameter and runs
-    fetch_all_campus
-    and
-    fetch_all_noodle
-"""
-
 # so the functions here return headlines as headline/link pairs
 # I want a list of articles
 
@@ -123,6 +125,7 @@ noodle_url = "https://thelocalnoodle.com/page/"
 
 # globals - campus
 begin = 53741 # 47710 is roughly the end of 2019
+begin = 44710
 campus_url = 'https://middleburycampus.com/'
 
 # the two sitemaps which include articles from our desired date range
@@ -182,10 +185,12 @@ def get_text_campus(article: Tuple) -> Dict:
     soup = BeautifulSoup( html_doc , 'html.parser')
 
     text = ""
-    content = soup.find_all("span",{"class": "storycontent"})[0]
-    for p in content.find_all("p"):
-        text = text + p.text
+
     try:
+        content = soup.find_all("span",{"class": "storycontent"})[0]
+        for p in content.find_all("p"):
+            text = text + p.text
+
         date_text = soup.find("span",{"class": "time-wrapper"}).text
         date = datetime.strptime(date_text, '%B %d, %Y') # this is still a datetime object
     except:
@@ -226,8 +231,8 @@ def scrape_all_news(since: datetime, outfile: str) -> None:
     f_dir = os.path.join(data_dir, outfile)
 
     # this gets us all headlines
+    noodle = fetch_all_noodle()
     campus = fetch_all_campus()
-    noodle = [] #fetch_all_noodle()
 
     # this will look at each headline and pull text for us
     campus_texts_full = []
@@ -272,7 +277,7 @@ if __name__ == '__main__':
             exit(-1)
 
     # run the twitter scrape
-    #users = get_user_list()
+    users = get_user_list()
+    scrape_all_news(since=date_start_dt,outfile="news_out.txt")
     #user_scrape(users, limit=100, outfile="tweets_out.csv", since=date_start)
     # and the campus scrape
-    scrape_all_news(since=date_start_dt,outfile="news_out.txt")
