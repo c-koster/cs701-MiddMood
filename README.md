@@ -24,6 +24,8 @@ $ pwd
 $ crontab -e
 
 0 1 * * 0 python3 {pwd}/text_scraping_lib.py
+
+
 30 1 * * 0 python3 {pwd}/evals_lib.py
 
 
