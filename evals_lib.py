@@ -72,11 +72,11 @@ assert(os.path.exists(filepath_dodds))
 
 
 # convenience functions --
-def date_range(d0: date,d1: date) -> List:
+def date_range(d0: date,d1: date) -> List[date]:
     """ give me a range of days """
     return [d0+timedelta(days=i) for i in range((d1-d0).days)]
 
-def get_word_index(DIAL: int=2) -> Dict:
+def get_word_index(DIAL: int=2) -> Dict[str,float]:
     """ Load the dodds/mturk word bank into a dictionary for quick lookups"""
     word_hash = {}
 
@@ -97,9 +97,9 @@ def get_word_index(DIAL: int=2) -> Dict:
 class TextData:
     name: str
     corpus: str
-    counts: Optional[Dict[str,int]] = None
+    counts: Dict[str,int] = {}
     score: Optional[float] = None
-    pos: Optional[Dict[str,int]] = None
+    pos: Dict[str,int] = {}
 
     def add_to(self,text: str) -> None: # convenience method
         self.corpus = self.corpus + " " + text + " "
@@ -110,7 +110,7 @@ class TextData:
         self.pos[name] = self.pos.get(name, 0) + 1
 
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> Dict[str,int]:
         """
         This method creates a list of all the words in a string, and returns them all
         as counts in a dictionary.
@@ -125,10 +125,11 @@ class TextData:
         )
         text_to_words = word_features.build_analyzer()
 
-        words = Counter() # special dict which makes it easy to count things
+        words: Dict[str,int] = Counter() # special dict which makes it easy to count things
 
         corpus_iter = text_to_words(self.corpus)
         # string -> list of lowercase words with no punctuation
+        word: str
         for word in corpus_iter:
             if word not in STOPWORDS:
                 words[word] +=1
@@ -138,7 +139,7 @@ class TextData:
     def to_jsonl(self) -> str:
         self.score = self.dodds_word_score() # first compute the score
         try:
-            merged_dict = {**self.counts, **self.pos}
+            merged_dict: Dict[str,int] = {**self.counts, **self.pos}
         except TypeError:
             merged_dict = self.counts
 
@@ -151,13 +152,13 @@ class TextData:
         return json.dumps(dict_out)
 
 
-    def dodds_word_score(self,word_scores=get_word_index()):
+    def dodds_word_score(self, word_scores: Dict[str,float]=get_word_index()) -> float:
         """
         Perform a dodds-grading scheme on a corpus/bag of words.
         """
         self.counts = self.to_dict()
 
-        h_avg = 0
+        h_avg: float = 0
         words_tot = 0
         for w in self.counts.items():
             word = w[0]
@@ -231,10 +232,11 @@ def get_text_by_day(d0: date, d1: date):
                 continue
 
     with open(filepath_n) as fp: # NEWS
-        for line in tqdm(fp,total=778): # 
+
+        for line in tqdm(fp,total=778): #type:ignore
             try: # try to load the article into this day's TextData object
-                doc = json.loads(line)
-                day = doc["date"][:10]
+                doc: Dict[str,str] = json.loads(line)
+                day_key: str = doc["date"][:10]
 
                 tokenized_article = word_tokenize(doc["text"])
                 tagged = pos_tag(tokenized_article)
@@ -243,13 +245,13 @@ def get_text_by_day(d0: date, d1: date):
                     if (hasattr(tree, 'label') and len(tree)>1):
 
                         entity = ' '.join([child[0].lower() for child in tree])
-                        group_by_day[day].add_pos(entity)
+                        group_by_day[day_key].add_pos(entity)
 
-                group_by_day[day].add_to(doc["title"])
+                group_by_day[day_key].add_to(doc["title"])
 
                 # clean before adding it to the text corp
 
-                group_by_day[day].add_to(doc["text"])
+                group_by_day[day_key].add_to(doc["text"])
 
             except KeyError: # as above
                 continue
@@ -279,7 +281,7 @@ if __name__ == "__main__":
             exit(-1)
 
     # construct get-text-by-day dictionary
-    dates = get_text_by_day(date_start,date_end)
+    dates: Dict[str,TextData] = get_text_by_day(date_start,date_end)
 
     # write me to some file in a place that hirona can read from
     with open(filepath_out,"w") as outfile:

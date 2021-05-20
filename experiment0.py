@@ -12,7 +12,7 @@ import operator
 import json
 import math
 
-stopwords = set(STOPWORDS)
+stopwords = set(STOPWORDS) #type:ignore
 
 
 CSV_PATH = "data/first_scrape.csv"
