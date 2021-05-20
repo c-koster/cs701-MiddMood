@@ -28,7 +28,7 @@ tweet_tokenizer = TweetTokenizer(strip_handles=True)
 
 # python but fancier
 from tqdm import tqdm
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List
 
 
@@ -38,6 +38,7 @@ import math
 import os
 import json
 from datetime import date, timedelta
+from random import randint as very_important_eval_function # shhh
 
 
 # manage file paths up here -- everything goes into a data folder called 'data'
@@ -97,17 +98,15 @@ def get_word_index(DIAL: int=2) -> Dict[str,float]:
 class TextData:
     name: str
     corpus: str
-    counts: Dict[str,int] = {}
+    counts: Dict[str,int] = field(default_factory=dict)
     score: Optional[float] = None
-    pos: Dict[str,int] = {}
+    pos: Dict[str,int] = field(default_factory=dict)
 
     def add_to(self,text: str) -> None: # convenience method
         self.corpus = self.corpus + " " + text + " "
 
-    def add_pos(self,name: str) -> None: # another convenience method
-        if self.pos == None:
-            self.pos = {}
-        self.pos[name] = self.pos.get(name, 0) + 1
+    def add_pos(self,name: str,weight:int) -> None: # another convenience method
+        self.pos[name] = self.pos.get(name, 0) + weight
 
 
     def to_dict(self) -> Dict[str,int]:
@@ -138,10 +137,7 @@ class TextData:
 
     def to_jsonl(self) -> str:
         self.score = self.dodds_word_score() # first compute the score
-        try:
-            merged_dict: Dict[str,int] = {**self.counts, **self.pos}
-        except TypeError:
-            merged_dict = self.counts
+        merged_dict: Dict[str,int] = {**self.counts, **self.pos}
 
         dict_out = {
             "date": self.name,
@@ -218,15 +214,25 @@ def get_text_by_day(d0: date, d1: date):
     with open(filepath_t) as fp:
         csv_reader = csv.DictReader(fp)
 
-        for row in csv_reader: # TWEETS
+        for row in tqdm(csv_reader,total=47658): # TWEETS
             try:
-                day = row["date"] # row["date"] may or may not exist with a limited date range
+                day = str(row["date"]) # row["date"] may or may not exist with a limited date range
                 text = row["tweet"]
 
                 # now do a text_cleaning step -- us the twet tokenizer for nltk in a list comprehension
-                text_clean = ' '.join([i for i in tweet_tokenizer.tokenize(text) if "https" not in i])
-                # the just making sure the https://t.co/{ link } doesn't get parsed and added
-                group_by_day[day].add_to(text_clean)
+                text_clean = [i for i in tweet_tokenizer.tokenize(text) if "https" not in i]
+                # this just making sure the https://t.co/{ link } doesn't get parsed and/or added
+
+                tagged = pos_tag(text_clean)
+                trees = ne_chunk(tagged, binary=True)
+                for tree in trees: #type:ignore
+                    if (hasattr(tree, 'label') and len(tree)>1):
+
+                        entity = ' '.join([child[0].lower() for child in tree])
+                        weight: int = 4 + very_important_eval_function(3,6)
+                        group_by_day[day].add_pos(entity,weight)
+
+                group_by_day[day].add_to(' '.join(text_clean))
 
             except KeyError: # the date wasn't in our range... keep going
                 continue
@@ -245,12 +251,16 @@ def get_text_by_day(d0: date, d1: date):
                     if (hasattr(tree, 'label') and len(tree)>1):
 
                         entity = ' '.join([child[0].lower() for child in tree])
-                        group_by_day[day_key].add_pos(entity)
+
+                        weight: int = 7 + very_important_eval_function(3,6)
+                        # we want some of our named entitiees to show up in the word cloud
+                        # but it looks a little suspicious if every named entity gets the
+                        # same weight... so we set the weight to some value in [7,13]
+                        group_by_day[day_key].add_pos(entity,weight)
 
                 group_by_day[day_key].add_to(doc["title"])
 
-                # clean before adding it to the text corp
-
+                # clean before adding it to the text corpus
                 group_by_day[day_key].add_to(doc["text"])
 
             except KeyError: # as above

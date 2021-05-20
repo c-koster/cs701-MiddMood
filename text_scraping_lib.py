@@ -278,7 +278,7 @@ if __name__ == '__main__':
             exit(-1)
 
     # run the twitter scrape
-    users = get_user_list()
-    scrape_all_news(since=date_start_dt,outfile="news_out.txt")
-    user_scrape(users, limit=10000, outfile="tweets_out.csv", since=date_start)
+    users: List[str] = get_user_list()
+    scrape_all_news(since=date_start_dt,outfile="news_out1.txt")
+    user_scrape(users, limit=10000, outfile="tweets_out1.csv", since=date_start)
     # and the campus scrape
