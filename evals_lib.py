@@ -18,13 +18,16 @@ from collections import Counter
 from sklearn.feature_extraction.text import CountVectorizer
 
 
-from wordcloud import STOPWORDS
-STOPWORDS = set(STOPWORDS)
-STOPWORDS = STOPWORDS | set(['t','co','http','https'])
-# https is really trending huh
+
+from nltk.tokenize import TweetTokenizer
+from nltk import pos_tag, word_tokenize, ne_chunk
+# pos tag is a
+# our lord and savior --
+tweet_tokenizer = TweetTokenizer(strip_handles=True)
 
 
 # python but fancier
+from tqdm import tqdm
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 
@@ -36,13 +39,25 @@ import os
 import json
 from datetime import date, timedelta
 
+
 # manage file paths up here -- everything goes into a data folder called 'data'
 data_dir = "./data"
 csv_filename = "tweets_out.csv"
 news_filename = "news_out.txt"
 dodds_filename = "dodds.txt"
-
+badwords_filename = "badwords.txt"
 out_filename = "fur_hirona.txt"
+
+from wordcloud import STOPWORDS
+STOPWORDS = set(STOPWORDS)
+STOPWORDS = STOPWORDS | set(['t','co','http','https'])
+# https is really trending huh
+with open(os.path.join(data_dir, badwords_filename)) as fp:
+    for line in fp:
+        l = line.replace("\n","").split(" ")
+        if len(l) == 1:
+            STOPWORDS.add(l[0])
+
 
 filepath_n = os.path.join(data_dir, news_filename)
 filepath_t = os.path.join(data_dir, csv_filename)
@@ -78,17 +93,22 @@ def get_word_index(DIAL: int=2) -> Dict:
     return word_hash
 
 
-
-
 @dataclass
 class TextData:
     name: str
     corpus: str
-    counts: Optional[Dict] = None
+    counts: Optional[Dict[str,int]] = None
     score: Optional[float] = None
+    pos: Optional[Dict[str,int]] = None
 
-    def add_to(self,text: str): # convenience method
+    def add_to(self,text: str) -> None: # convenience method
         self.corpus = self.corpus + " " + text + " "
+
+    def add_pos(self,name: str) -> None: # another convenience method
+        if self.pos == None:
+            self.pos = {}
+        self.pos[name] = self.pos.get(name, 0) + 1
+
 
     def to_dict(self) -> Dict:
         """
@@ -117,10 +137,15 @@ class TextData:
 
     def to_jsonl(self) -> str:
         self.score = self.dodds_word_score() # first compute the score
+        try:
+            merged_dict = {**self.counts, **self.pos}
+        except TypeError:
+            merged_dict = self.counts
+
         dict_out = {
             "date": self.name,
             "score": self.score,
-            "words": self.counts,
+            "words": merged_dict,
         }
 
         return json.dumps(dict_out)
@@ -192,21 +217,38 @@ def get_text_by_day(d0: date, d1: date):
     with open(filepath_t) as fp:
         csv_reader = csv.DictReader(fp)
 
-        for row in csv_reader:
+        for row in csv_reader: # TWEETS
             try:
                 day = row["date"] # row["date"] may or may not exist with a limited date range
                 text = row["tweet"]
-                group_by_day[day].add_to(text)
+
+                # now do a text_cleaning step -- us the twet tokenizer for nltk in a list comprehension
+                text_clean = ' '.join([i for i in tweet_tokenizer.tokenize(text) if "https" not in i])
+                # the just making sure the https://t.co/{ link } doesn't get parsed and added
+                group_by_day[day].add_to(text_clean)
 
             except KeyError: # the date wasn't in our range... keep going
                 continue
 
-    with open(filepath_n) as fp:
-        for line in fp:
+    with open(filepath_n) as fp: # NEWS
+        for line in tqdm(fp,total=778): # 
             try: # try to load the article into this day's TextData object
                 doc = json.loads(line)
                 day = doc["date"][:10]
+
+                tokenized_article = word_tokenize(doc["text"])
+                tagged = pos_tag(tokenized_article)
+                trees = ne_chunk(tagged, binary=True)
+                for tree in trees:
+                    if (hasattr(tree, 'label') and len(tree)>1):
+
+                        entity = ' '.join([child[0].lower() for child in tree])
+                        group_by_day[day].add_pos(entity)
+
                 group_by_day[day].add_to(doc["title"])
+
+                # clean before adding it to the text corp
+
                 group_by_day[day].add_to(doc["text"])
 
             except KeyError: # as above
@@ -242,5 +284,5 @@ if __name__ == "__main__":
     # write me to some file in a place that hirona can read from
     with open(filepath_out,"w") as outfile:
         for i in dates.values():
-            outfile.write("{}\n".format( i.to_jsonl() ))
+            print(i.to_jsonl(),file=outfile)
             # using a textdata method to convert each 'day' into a jsonlines

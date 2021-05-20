@@ -63,7 +63,7 @@ def get_user_list(friends_filename: str = "friends.txt") -> List:
     Connect to twitter's api, scroll through everyone followed by my account,
     and append their handles to my list.
     """
-    users: List = []
+    users: List[str] = []
     # two cases for running this function --
     # either there is a list already or there is not
     f_path = os.path.join(data_dir, friends_filename)
@@ -106,7 +106,7 @@ def user_scrape(users: List, outfile: str, limit: int, since: str) -> None:
     c.Store_csv = True
     c.Since = since
 
-    for u in tqdm(users, total=294):
+    for u in tqdm(users, total=293):
         # and run the search for each username
         sleep(2.5)
         try:
@@ -236,13 +236,13 @@ def scrape_all_news(since: datetime, outfile: str) -> None:
 
     # this will look at each headline and pull text for us
     campus_texts_full = []
-    for article_pair in campus:
+    for article_pair in tqdm(campus):
         a = get_text_campus(article_pair)
         if a != False:
             campus_texts_full.append(a)
 
     noodle_texts_full = []
-    for article_pair in noodle:
+    for article_pair in tqdm(noodle):
         noodle_texts_full.append(get_text_noodle(article_pair))
 
     # how to use the ternary op:
@@ -259,6 +259,7 @@ def scrape_all_news(since: datetime, outfile: str) -> None:
             if a['date'] > since:
                 a['date'] = str(a['date'])
                 fp.write("{}\n".format(json.dumps(a)))
+
 
 
 # I am not being imported -- running code goes here
@@ -279,5 +280,5 @@ if __name__ == '__main__':
     # run the twitter scrape
     users = get_user_list()
     scrape_all_news(since=date_start_dt,outfile="news_out.txt")
-    #user_scrape(users, limit=100, outfile="tweets_out.csv", since=date_start)
+    user_scrape(users, limit=10000, outfile="tweets_out.csv", since=date_start)
     # and the campus scrape

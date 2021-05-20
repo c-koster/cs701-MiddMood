@@ -9,7 +9,7 @@ By Culton Koster and Hirona Arai
 
 
 ## Deploy Instructions
-1. ensure there is a /data file, which contains a copy of Dodds' word evaluations called dodds.txt (this can be found in the supplementary materials at this link https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0026752#pone.0026752.s001). The text scraping library will look for this file, and will also write scraped tweet and news to the data directory. Lastly, change the access to your working directory to rwx------, so that nobody can peek at your .env file and get into your Twitter account.
+1. ensure there is a /data file, which contains a) a copy of Dodds' word evaluations called dodds.txt (this can be found in the supplementary materials at this link https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0026752#pone.0026752.s001) and b) a copy of our stop words: https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en. The text scraping library will look for this file, and will also write scraped tweet and news to the data directory. Lastly, change the access to your working directory to rwx------, so that nobody can peek at your .env file and get into your Twitter account.
 $ mkdir data
 $ curl {dodds link - this is really long} > data/dodds.txt
 $ chmod 700 .
@@ -28,5 +28,4 @@ $ crontab -e
 
 
 ## Link to our Site
-
 https://www.middood.herokuapp.com
